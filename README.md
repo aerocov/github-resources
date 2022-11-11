@@ -1,1 +1,1 @@
-This repository holds all the reusable github workflows and actions used in DBC.
+This repository holds all the reusable github resources used in DBC.
