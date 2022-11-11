@@ -1,0 +1,122 @@
+name: Terraform Deploy
+
+on:
+  workflow_call:
+    inputs:
+      github_env:
+        type: string
+
+      working_dir:
+        type: string
+        required: true
+
+      tf_var_file:
+        type: string
+        required: true
+
+      tf_backend_resource_group_name:
+        type: string
+        required: true
+
+      tf_backend_storage_account_name:
+        type: string
+        required: true
+
+      tf_backend_storage_container_name:
+        type: string
+        required: true
+
+      tf_backend_state_key:
+        type: string
+        required: true
+
+    secrets:
+      arm_client_id:
+        type: string
+        required: true
+
+      arm_client_secret:
+        type: string
+        required: true
+
+      arm_subscription_id:
+        type: string
+        required: true
+
+      arm_tenant_id:
+        type: string
+        required: true
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.arm_client_id }}
+  ARM_CLIENT_SECRET: ${{ secrets.arm_client_secret }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.arm_subscription_id }}
+  ARM_TENANT_ID: ${{ secrets.arm_tenant_id }}
+  TF_BACKEND_RESOURCE_GROUP_NAME: ${{ inputs.tf_backend_resource_group_name }}
+  TF_BACKEND_STORAGE_ACCOUNT_NAME: ${{ inputs.tf_backend_storage_account_name }}
+  TF_BACKEND_STORAGE_CONTAINER_NAME: ${{ inputs.tf_backend_storage_container_name }}
+  TF_BACKEND_STATE_KEY: ${{ inputs.tf_backend_state_key }}
+  TF_VAR_FILE: ${{ inputs.tf_var_file }}
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    working-directory: ${{ inputs.working_dir }}
+    shell: bash
+
+jobs:
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+              -backend-config="resource_group_name=$TF_BACKEND_RESOURCE_GROUP_NAME" \
+              -backend-config="storage_account_name=$TF_BACKEND_STORAGE_ACCOUNT_NAME" \
+              -backend-config="container_name=$TF_BACKEND_STORAGE_CONTAINER_NAME" \
+              -backend-config="key=$TF_BACKEND_STATE_KEY"
+
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=$TF_VAR_FILE
+
+  terraform-apply:
+    name: 'Terraform Apply'
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    environment:
+      name: ${{ inputs.github_env }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+              -backend-config="resource_group_name=$TF_BACKEND_RESOURCE_GROUP_NAME" \
+              -backend-config="storage_account_name=$TF_BACKEND_STORAGE_ACCOUNT_NAME" \
+              -backend-config="container_name=$TF_BACKEND_STORAGE_CONTAINER_NAME" \
+              -backend-config="key=$TF_BACKEND_STATE_KEY"
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file=$TF_VAR_FILE
