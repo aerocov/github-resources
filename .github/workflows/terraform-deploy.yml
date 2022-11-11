@@ -32,19 +32,15 @@ on:
 
     secrets:
       arm_client_id:
-        type: string
         required: true
 
       arm_client_secret:
-        type: string
         required: true
 
       arm_subscription_id:
-        type: string
         required: true
 
       arm_tenant_id:
-        type: string
         required: true
 
 env:
