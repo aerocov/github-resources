@@ -71,6 +71,9 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIR }}
 
+    environment:
+      name: ${{ inputs.github_env }}
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v3
