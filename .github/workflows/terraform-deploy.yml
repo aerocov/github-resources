@@ -86,9 +86,6 @@ jobs:
               -backend-config="container_name=$TF_BACKEND_STORAGE_CONTAINER_NAME" \
               -backend-config="key=$TF_BACKEND_STATE_KEY"
 
-      - name: Terraform Format
-        run: terraform fmt -check
-
       - name: Terraform Validate
         run: terraform validate
 
@@ -102,7 +99,7 @@ jobs:
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
-        
+
     environment:
       name: ${{ inputs.github_env }}
 
