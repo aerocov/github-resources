@@ -89,5 +89,5 @@ jobs:
               -backend-config="container_name=$TF_BACKEND_STORAGE_CONTAINER_NAME" \
               -backend-config="key=$TF_BACKEND_STATE_KEY"
 
-      - name: Terraform Plan
+      - name: Terraform Destroy
         run: terraform destroy -auto-approve -var-file=$TF_VAR_FILE
