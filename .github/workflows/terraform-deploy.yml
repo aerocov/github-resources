@@ -75,6 +75,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: TF values
+        run: |
+          cat "./$TF_VAR_FILE"
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
