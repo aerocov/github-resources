@@ -10,9 +10,13 @@ on:
         type: string
         required: true
 
-      tf_var_file:
+      tfvars_file:
         type: string
         required: true
+
+      auto_tfvars_artifact:
+        type: string
+        required: false
 
       tf_backend_resource_group_name:
         type: string
@@ -52,7 +56,8 @@ env:
   TF_BACKEND_STORAGE_ACCOUNT_NAME: ${{ inputs.tf_backend_storage_account_name }}
   TF_BACKEND_STORAGE_CONTAINER_NAME: ${{ inputs.tf_backend_storage_container_name }}
   TF_BACKEND_STATE_KEY: ${{ inputs.tf_backend_state_key }}
-  TF_VAR_FILE: ${{ inputs.tf_var_file }}
+  TFVARS_FILE: ${{ inputs.tfvars_file }}
+  AUTO_TFVARS_ARTIFACT: ${{ inputs.auto_tfvars_artifact }}
   WORKING_DIR: ${{ inputs.working_dir }}
 
 permissions:
@@ -75,9 +80,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: TF values
+      - name: Download auto tfvars
+        if: ${{ env.AUTO_TFVARS_ARTIFACT }}
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.AUTO_TFVARS_ARTIFACT }}
+          path: ${{ env.WORKING_DIR }}
+
+      - name: Show tfvars artifact
+        if: ${{ inputs.auto_tf_var_files_artifact }}
         run: |
-          cat "./$TF_VAR_FILE"
+          echo "tfvars artifact contents:"
+          cat "./values.auto.tfvars"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -94,7 +108,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -var-file=$TF_VAR_FILE
+        run: terraform plan -var-file=$TFVARS_FILE
 
   terraform-apply:
     name: 'Terraform Apply'
@@ -111,6 +125,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Download auto tfvars
+        if: ${{ env.AUTO_TFVARS_ARTIFACT }}
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.AUTO_TFVARS_ARTIFACT }}
+          path: ${{ env.WORKING_DIR }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
@@ -123,4 +144,4 @@ jobs:
               -backend-config="key=$TF_BACKEND_STATE_KEY"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file=$TF_VAR_FILE
+        run: terraform apply -auto-approve -var-file=$TFVARS_FILE
