@@ -34,6 +34,10 @@ on:
         type: string
         required: true
 
+      tf_parallelism_count:
+        type: string
+        default: '10'
+
     secrets:
       arm_client_id:
         required: true
@@ -58,6 +62,7 @@ env:
   TF_BACKEND_STATE_KEY: ${{ inputs.tf_backend_state_key }}
   TFVARS_FILE: ${{ inputs.tfvars_file }}
   AUTO_TFVARS_ARTIFACT: ${{ inputs.auto_tfvars_artifact }}
+  TF_PARALLELISM_COUNT: ${{ inputs.tf_parallelism_count }}
   WORKING_DIR: ${{ inputs.working_dir }}
 
 permissions:
@@ -144,4 +149,4 @@ jobs:
               -backend-config="key=$TF_BACKEND_STATE_KEY"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file=$TFVARS_FILE
+        run: terraform apply -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT
