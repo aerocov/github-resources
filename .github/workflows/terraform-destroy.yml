@@ -10,7 +10,7 @@ on:
         type: string
         required: true
 
-      tf_var_file:
+      tfvars_file:
         type: string
         required: true
 
@@ -29,6 +29,10 @@ on:
       tf_backend_state_key:
         type: string
         required: true
+
+      tf_parallelism_count:
+        type: string
+        default: '10'
 
     secrets:
       arm_client_id:
@@ -52,7 +56,8 @@ env:
   TF_BACKEND_STORAGE_ACCOUNT_NAME: ${{ inputs.tf_backend_storage_account_name }}
   TF_BACKEND_STORAGE_CONTAINER_NAME: ${{ inputs.tf_backend_storage_container_name }}
   TF_BACKEND_STATE_KEY: ${{ inputs.tf_backend_state_key }}
-  TF_VAR_FILE: ${{ inputs.tf_var_file }}
+  TFVARS_FILE: ${{ inputs.tfvars_file }}
+  TF_PARALLELISM_COUNT: ${{ inputs.tf_parallelism_count }}
   WORKING_DIR: ${{ inputs.working_dir }}
 
 permissions:
@@ -73,7 +78,7 @@ jobs:
 
     environment:
       name: ${{ inputs.github_env }}
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -89,5 +94,8 @@ jobs:
               -backend-config="container_name=$TF_BACKEND_STORAGE_CONTAINER_NAME" \
               -backend-config="key=$TF_BACKEND_STATE_KEY"
 
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var-file=$TF_VAR_FILE
+        run: terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT
