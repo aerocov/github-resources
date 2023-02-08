@@ -35,23 +35,17 @@ on:
         default: '10'
 
     secrets:
-      arm_client_id:
+      azure_login_creds:
         required: true
 
-      arm_client_secret:
-        required: true
-
-      arm_subscription_id:
-        required: true
-
-      arm_tenant_id:
-        required: true
+      run_expression:
+        required: false
 
 env:
-  ARM_CLIENT_ID: ${{ secrets.arm_client_id }}
-  ARM_CLIENT_SECRET: ${{ secrets.arm_client_secret }}
-  ARM_SUBSCRIPTION_ID: ${{ secrets.arm_subscription_id }}
-  ARM_TENANT_ID: ${{ secrets.arm_tenant_id }}
+  ARM_CLIENT_ID: ${{ fromJson(secrets.azure_login_creds).clientId }}
+  ARM_CLIENT_SECRET: ${{ fromJson(secrets.azure_login_creds).clientSecret }}
+  ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.azure_login_creds).subscriptionId }}
+  ARM_TENANT_ID: ${{ fromJson(secrets.azure_login_creds).tenantId }}
   TF_BACKEND_RESOURCE_GROUP_NAME: ${{ inputs.tf_backend_resource_group_name }}
   TF_BACKEND_STORAGE_ACCOUNT_NAME: ${{ inputs.tf_backend_storage_account_name }}
   TF_BACKEND_STORAGE_CONTAINER_NAME: ${{ inputs.tf_backend_storage_container_name }}
@@ -98,4 +92,6 @@ jobs:
         run: terraform validate
 
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT
+        run: |
+          eval ${{ secrets.run_expression }}
+          terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT
