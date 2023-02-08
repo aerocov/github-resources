@@ -42,7 +42,7 @@ on:
         required: false
 
 env:
-  RM_CLIENT_ID: ${{ fromJson(secrets.azure_login_creds).clientId }}
+  ARM_CLIENT_ID: ${{ fromJson(secrets.azure_login_creds).clientId }}
   ARM_CLIENT_SECRET: ${{ fromJson(secrets.azure_login_creds).clientSecret }}
   ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.azure_login_creds).subscriptionId }}
   ARM_TENANT_ID: ${{ fromJson(secrets.azure_login_creds).tenantId }}
