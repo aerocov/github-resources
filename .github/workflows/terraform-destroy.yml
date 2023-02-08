@@ -38,6 +38,9 @@ on:
       azure_login_creds:
         required: true
 
+      run_expression:
+        required: false
+
 env:
   RM_CLIENT_ID: ${{ fromJson(secrets.azure_login_creds).clientId }}
   ARM_CLIENT_SECRET: ${{ fromJson(secrets.azure_login_creds).clientSecret }}
@@ -89,4 +92,6 @@ jobs:
         run: terraform validate
 
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT
+        run: |
+          eval ${{ secrets.run_expression }}
+          terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT

@@ -41,6 +41,9 @@ on:
     secrets:
       azure_login_creds:
         required: true
+      
+      run_expression:
+        required: false
 
 env:
   ARM_CLIENT_ID: ${{ fromJson(secrets.azure_login_creds).clientId }}
@@ -104,7 +107,9 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -var-file=$TFVARS_FILE
+        run: |
+          eval ${{ secrets.run_expression }}
+          terraform plan -var-file=$TFVARS_FILE
 
   terraform-apply:
     name: 'Terraform Apply'
@@ -140,4 +145,6 @@ jobs:
               -backend-config="key=$TF_BACKEND_STATE_KEY"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT
+        run: |
+          eval ${{ secrets.run_expression }}
+          terraform apply -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT
