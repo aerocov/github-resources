@@ -109,7 +109,7 @@ jobs:
       - name: Terraform Plan
         run: |
           eval ${{ secrets.run_expression }}
-          terraform plan -var-file=$TFVARS_FILE
+          terraform plan -var-file=$TFVARS_FILE -input=false
 
   terraform-apply:
     name: 'Terraform Apply'
@@ -147,4 +147,4 @@ jobs:
       - name: Terraform Apply
         run: |
           eval ${{ secrets.run_expression }}
-          terraform apply -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT
+          terraform apply -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT -input=false

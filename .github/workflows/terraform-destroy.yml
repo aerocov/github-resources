@@ -94,4 +94,4 @@ jobs:
       - name: Terraform Destroy
         run: |
           eval ${{ secrets.run_expression }}
-          terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT
+          terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT -input=false
