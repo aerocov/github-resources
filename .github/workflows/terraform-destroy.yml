@@ -33,12 +33,16 @@ on:
       tf_parallelism_count:
         type: string
         default: '10'
+      
+      run_expression:
+        type: string
+        required: false
 
     secrets:
       azure_login_creds:
         required: true
 
-      run_expression:
+      aes_key:
         required: false
 
 env:
@@ -93,5 +97,16 @@ jobs:
 
       - name: Terraform Destroy
         run: |
-          eval ${{ secrets.run_expression }}
+          pass=${{ secrets.aes_key }}
+          run_expression=${{ inputs.run_expression }}
+          if [ ! -z "$run_expression" ]; then
+            if [ ! -z "$pass" ]; then
+              echo "Decrypting and running run_expression"
+              decrypted=$(echo $run_expression | openssl aes-256-cbc -pbkdf2 -d -a -A -pass pass:$pass)            
+              eval $decrypted
+            else
+              eval $run_expression
+            fi
+          fi
+          
           terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT -input=false

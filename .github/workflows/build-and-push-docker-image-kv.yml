@@ -1,4 +1,4 @@
-name: Build and push docker images
+name: Build and push docker images, using Azure keyvault
 
 on:
   workflow_call:
@@ -24,15 +24,16 @@ on:
         type: string
         required: true
 
+      keyvault:
+        type: string
+        required: true
+
       container_registry_server:
         type: string
         required: true
 
     secrets:
-      container_registry_username:
-        required: true
-
-      container_registry_password:
+      azure_login_creds:
         required: true
 
 defaults:
@@ -42,24 +43,31 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     environment:
       name: ${{ inputs.github_env  }}
-
-    env:
-      CONTAINER_REGISTRY_USERNAME: ${{ secrets.container_registry_username }}
-      CONTAINER_REGISTRY_PASSWORD: ${{ secrets.container_registry_password }}
 
     steps:
       - uses: actions/checkout@v3
 
+      - name: Azure login
+        uses: Azure/login@v1
+        with:
+          creds: '${{ secrets.azure_login_creds }}'
+
+      - name: Retrieve ACR login secrets
+        uses: Azure/get-keyvault-secrets@v1
+        with:
+          keyvault: ${{ inputs.keyvault }}
+          secrets: 'acr-username, acr-password'
+        id: keyvault
+
       - name: Log in to the Azure Container Registry
         uses: docker/login-action@v2
-        if: ${{ env.CONTAINER_REGISTRY_USERNAME != '' && env.CONTAINER_REGISTRY_PASSWORD != '' }}
         with:
           registry: ${{ inputs.container_registry_server }}
-          username: ${{ secrets.container_registry_username }}
-          password: ${{ secrets.container_registry_password }}
+          username: ${{ steps.keyvault.outputs.acr-username }}
+          password: ${{ steps.keyvault.outputs.acr-password }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
