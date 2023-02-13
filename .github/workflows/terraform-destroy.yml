@@ -14,6 +14,14 @@ on:
         type: string
         required: true
 
+      auto_tfvars_artifact:
+        type: string
+        required: false
+
+      auto_tfvars:
+        type: string
+        required: false
+
       tf_backend_resource_group_name:
         type: string
         required: true
@@ -34,16 +42,9 @@ on:
         type: string
         default: '10'
       
-      run_expression:
-        type: string
-        required: false
-
     secrets:
       azure_login_creds:
         required: true
-
-      aes_key:
-        required: false
 
 env:
   ARM_CLIENT_ID: ${{ fromJson(secrets.azure_login_creds).clientId }}
@@ -55,6 +56,7 @@ env:
   TF_BACKEND_STORAGE_CONTAINER_NAME: ${{ inputs.tf_backend_storage_container_name }}
   TF_BACKEND_STATE_KEY: ${{ inputs.tf_backend_state_key }}
   TFVARS_FILE: ${{ inputs.tfvars_file }}
+  AUTO_TFVARS_ARTIFACT: ${{ inputs.auto_tfvars_artifact }}
   TF_PARALLELISM_COUNT: ${{ inputs.tf_parallelism_count }}
   WORKING_DIR: ${{ inputs.working_dir }}
 
@@ -81,6 +83,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Download auto tfvars
+        if: ${{ env.AUTO_TFVARS_ARTIFACT }}
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.AUTO_TFVARS_ARTIFACT }}
+          path: ${{ env.WORKING_DIR }}
+
+      - name: Create auto tfvars
+        if: ${{ inputs.auto_tfvars }}
+        run: echo '${{ inputs.auto_tfvars }}' > 'injected.auto.tfvars'
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
@@ -96,17 +109,4 @@ jobs:
         run: terraform validate
 
       - name: Terraform Destroy
-        run: |
-          pass=${{ secrets.aes_key }}
-          run_expression=${{ inputs.run_expression }}
-          if [ ! -z "$run_expression" ]; then
-            if [ ! -z "$pass" ]; then
-              echo "Decrypting and running run_expression"
-              decrypted=$(echo $run_expression | openssl aes-256-cbc -pbkdf2 -d -a -A -pass pass:$pass)            
-              eval $decrypted
-            else
-              eval $run_expression
-            fi
-          fi
-          
-          terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT -input=false
+        run: terraform destroy -auto-approve -var-file=$TFVARS_FILE -parallelism=$TF_PARALLELISM_COUNT -input=false
