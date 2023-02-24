@@ -1,4 +1,4 @@
-name: RW — Backup postgres database (data only)
+name: RW — Restore postgres database (data only)
 
 on:
   workflow_call:
