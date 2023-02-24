@@ -1,0 +1,83 @@
+name: RW — Restore postgres database (schema only)
+
+on:
+  workflow_call:
+    inputs:
+      github_env:
+        type: string
+
+      database_host:
+        type: string
+        required: true
+
+      database_name:
+        type: string
+        required: true
+
+      database_user:
+        type: string
+        required: true
+
+      options:
+        type: string
+        required: false
+
+      storage_account_name:
+        type: string
+        required: true
+
+      storage_container_name:
+        type: string
+        required: true
+      
+      backup_file_name:
+        type: string
+        required: true
+
+    secrets:
+      database_password:
+        required: true
+      
+      azure_login_creds:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  backup:
+    name: 'Restore db'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.github_env  }}
+
+    steps:
+      - name: Azure login
+        uses: Azure/login@v1
+        with:
+          creds: '${{ secrets.azure_login_creds }}'
+
+      - name: Download
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az storage blob download \
+            --account-name ${{ inputs.storage_account_name }} \
+            --container-name ${{ inputs.storage_container_name }} \
+            --name ${{ inputs.backup_file_name }} \
+            --file ${{ inputs.backup_file_name }}
+
+      - name: Restore
+        run: |
+          PGPASSWORD='${{ secrets.database_password }}' pg_restore \
+          -h ${{ inputs.database_host }} \
+          -U ${{ inputs.database_user }} \
+          -Fc -v --no-owner --no-privileges --schema-only --single-transaction \
+          -d ${{ inputs.database_name }} \
+          ${{ inputs.options }} \
+          ${{ inputs.backup_file_name }}
+
+      

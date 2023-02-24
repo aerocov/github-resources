@@ -1,0 +1,81 @@
+name: RW — Backup postgres database (data only)
+
+on:
+  workflow_call:
+    inputs:
+      github_env:
+        type: string
+
+      database_host:
+        type: string
+        required: true
+
+      database_name:
+        type: string
+        required: true
+
+      database_user:
+        type: string
+        required: true
+
+      options:
+        type: string
+        required: false
+
+      storage_account_name:
+        type: string
+        required: true
+
+      storage_container_name:
+        type: string
+        required: true
+      
+      backup_file_name:
+        type: string
+        required: true
+
+    secrets:
+      database_password:
+        required: true
+      
+      azure_login_creds:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  backup:
+    name: 'Backup db data'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.github_env  }}
+
+    steps:
+
+      - name: Create
+        run: |
+          PGPASSWORD='${{ secrets.database_password }}' pg_dump \
+          -h ${{ inputs.database_host }} \
+          -U ${{ inputs.database_user }} \
+          -Fc -v --no-owner --no-privileges --data-only \
+          ${{ inputs.options }} \
+          -f ${{ inputs.backup_file_name }} \
+          ${{ inputs.database_name }}
+
+      - name: Azure login
+        uses: Azure/login@v1
+        with:
+          creds: '${{ secrets.azure_login_creds }}'
+
+      - name: Upload
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az storage blob upload \
+            --account-name ${{ inputs.storage_account_name }} \
+            --container-name ${{ inputs.storage_container_name }} \
+            --file ${{ inputs.backup_file_name }}
