@@ -71,14 +71,14 @@ jobs:
           -Fc -v --no-owner --no-privileges \
           ${{ inputs.options }} \
           -f ${{ inputs.backup_file_name }} \
-          ${{ inputs.database_name1 }}  ${{ inputs.database_name2 }}  ${{ inputs.database_name3 }} 
+          ${{ inputs.database_name1 }}
 
       - name: Azure login
         uses: Azure/login@v1
         with:
           creds: '${{ secrets.AZURE_CREDENTIALS }}'
 
-      - name: Upload
+      - name: Upload DB1
         uses: azure/CLI@v1
         with:
           azcliversion: 2.30.0
@@ -87,3 +87,52 @@ jobs:
             --account-name ${{ inputs.storage_account_name }} \
             --container-name ${{ inputs.storage_container_name }} \
             --file ${{ inputs.backup_file_name }}
+
+        run: |
+          PGPASSWORD='${{ secrets.DATABASE_PASSWORD }}' pg_dump \
+          -h ${{ inputs.database_host }} \
+          -U ${{ inputs.database_user }} \
+          -Fc -v --no-owner --no-privileges \
+          ${{ inputs.options }} \
+          -f ${{ inputs.backup_file_name }} \
+          ${{ inputs.database_name2 }}
+
+      - name: Azure login
+        uses: Azure/login@v1
+        with:
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
+
+      - name: Upload DB2
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az storage blob upload \
+            --account-name ${{ inputs.storage_account_name }} \
+            --container-name ${{ inputs.storage_container_name }} \
+            --file ${{ inputs.backup_file_name }} 
+
+        run: |
+          PGPASSWORD='${{ secrets.DATABASE_PASSWORD }}' pg_dump \
+          -h ${{ inputs.database_host }} \
+          -U ${{ inputs.database_user }} \
+          -Fc -v --no-owner --no-privileges \
+          ${{ inputs.options }} \
+          -f ${{ inputs.backup_file_name }} \
+          ${{ inputs.database_name3 }}
+
+      - name: Azure login
+        uses: Azure/login@v1
+        with:
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
+
+      - name: Upload DB3
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az storage blob upload \
+            --account-name ${{ inputs.storage_account_name }} \
+            --container-name ${{ inputs.storage_container_name }} \
+            --file ${{ inputs.backup_file_name }}
+
