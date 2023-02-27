@@ -65,7 +65,7 @@ jobs:
 
       - name: Create
         run: |
-          PGPASSWORD='${{ secrets.database_password }}' pg_dump \
+          PGPASSWORD='${{ secrets.DATABASE_PASSWORD }}' pg_dump \
           -h ${{ inputs.database_host }} \
           -U ${{ inputs.database_user }} \
           -Fc -v --no-owner --no-privileges \
@@ -78,7 +78,7 @@ jobs:
       - name: Azure login
         uses: Azure/login@v1
         with:
-          creds: '${{ secrets.azure_login_creds }}'
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
 
       - name: Upload
         uses: azure/CLI@v1
