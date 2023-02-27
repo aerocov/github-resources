@@ -10,9 +10,17 @@ on:
         type: string
         required: true
 
-      database_name:
+      database_name1:
         type: string
         required: true
+
+      database_name2:
+        type: string
+        required: true
+
+      database_name3:
+        type: string
+        required: true    
 
       database_user:
         type: string
@@ -63,7 +71,9 @@ jobs:
           -Fc -v --no-owner --no-privileges \
           ${{ inputs.options }} \
           -f ${{ inputs.backup_file_name }} \
-          ${{ inputs.database_name }}
+          ${{ inputs.database_name1 }} \
+          ${{ inputs.database_name2 }} \
+          ${{ inputs.database_name3 }}
 
       - name: Azure login
         uses: Azure/login@v1
