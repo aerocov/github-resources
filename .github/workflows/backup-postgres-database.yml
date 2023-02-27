@@ -43,10 +43,10 @@ on:
         required: true
 
     secrets:
-      database_password:
+      DATABASE_PASSWORD:
         required: true
       
-      azure_login_creds:
+      AZURE_CREDENTIALS:
         required: true
 
 defaults:
