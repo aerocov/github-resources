@@ -1,0 +1,118 @@
+name: RW — Backup a given database within an Azure Postgres server
+
+on:
+  workflow_call:
+    inputs:
+      github_env:
+        type: string
+
+      database_resource_group:
+        type: string
+        required: true
+
+      database_server_name:
+        type: string
+        required: true
+
+      is_single_server:
+        type: string
+        required: false
+        default: 'false'
+
+      database_name:
+        type: string
+        required: true
+
+      database_user:
+        type: string
+        required: true
+
+      pg_dump_options:
+        type: string
+        required: false
+        default: ''
+
+      backup_tag:
+        type: string
+        required: false
+        default: 'backup'
+
+      keyvault:
+        type: string
+        required: true
+
+      keyvault_has_acl:
+        type: boolean
+        required: false
+        default: false
+
+      database_password_kv_ref:
+        type: string
+        required: true
+
+      storage_account_name:
+        type: string
+        required: true
+
+      storage_container_name:
+        type: string
+        required: true
+
+    secrets:
+      az_creds:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  add_db_firewall_rule:
+    uses: ./.github/workflows/rw-change-azure-postgres-firewall.yml
+    with:
+      github_env: ${{ inputs.github_env }}
+      add_or_remove: add
+      database_resource_group: ${{ inputs.database_resource_group }}
+      database_server_name: ${{ inputs.database_server_name }}
+      is_single_server: ${{ inputs.is_single_server }}
+      firewall_rule_name: github-runner-br-${{ inputs.github_env }}
+    secrets:
+      azure_login_creds: ${{ secrets.az_creds }}
+
+  get_database_password:
+    needs: [add_db_firewall_rule]
+    uses: ./.github/workflows/rw-get-keyvault-secret.yml
+    with:
+      keyvault: ${{ inputs.keyvault }}
+      secret_ref: ${{ inputs.database_password_kv_ref }}
+      has_acl: ${{ inputs.keyvault_has_acl }}
+    secrets:
+      azure_login_creds: ${{ secrets.az_creds }}
+
+  backup_database:
+    needs: [add_db_firewall_rule, get_database_password]
+    uses: ./.github/workflows/rw-backup-postgres-database.yml
+    with:
+      database_host: '${{ inputs.database_server_name }}.postgres.database.azure.com'
+      database_name: ${{ inputs.database_name }}
+      database_user: ${{ inputs.database_user }}
+      options: ${{ inputs.pg_dump_options }}
+      storage_account_name: ${{ inputs.storage_account_name }}
+      storage_container_name: ${{ inputs.storage_container_name }}
+      backup_file_name: '${{ inputs.database_server_name }}_${{ inputs.database_name}}_${{ inputs.backup_tag }}_$(date +%Y-%m-%d_%H:%M:%S).sql'
+    secrets:
+      database_password: ${{ needs.get_database_password.outputs.result }}
+      azure_login_creds: ${{ secrets.az_creds }}
+
+  remove_db_firewall_rule:
+    needs: [add_db_firewall_rule, backup_database]
+    uses: ./.github/workflows/rw-change-azure-postgres-firewall.yml
+    if: ${{ always() && needs.add_db_firewall_rule.result == 'success'}}
+    with:
+      add_or_remove: remove
+      database_resource_group: ${{ inputs.database_resource_group }}
+      database_server_name: ${{ inputs.database_server_name }}
+      is_single_server: ${{ inputs.is_single_server }}
+      firewall_rule_name: github-runner-br-${{ inputs.github_env }}
+    secrets:
+      azure_login_creds: ${{ secrets.az_creds }}
