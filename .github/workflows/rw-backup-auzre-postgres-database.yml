@@ -67,6 +67,16 @@ defaults:
     shell: bash
 
 jobs:
+  create_metadata:
+    runs-on: ubuntu-latest
+    outputs:
+      backup_filename: ${{ steps.metadata.backup_filename }}
+    steps:
+      - name: Create
+        id: metadata
+        run: |
+          echo "backup_filename=${{ inputs.database_server_name }}_${{ inputs.database_name}}_${{ inputs.backup_tag }}_$(date +%Y-%m-%d_%H:%M:%S).sql" >> $GITHUB_OUTPUT
+
   add_db_firewall_rule:
     uses: ./.github/workflows/rw-change-azure-postgres-firewall.yml
     with:
@@ -90,7 +100,7 @@ jobs:
       azure_login_creds: ${{ secrets.az_creds }}
 
   backup_database:
-    needs: [add_db_firewall_rule, get_database_password]
+    needs: [create_metadata, add_db_firewall_rule, get_database_password]
     uses: ./.github/workflows/rw-backup-postgres-database.yml
     with:
       database_host: '${{ inputs.database_server_name }}.postgres.database.azure.com'
@@ -99,7 +109,7 @@ jobs:
       options: ${{ inputs.pg_dump_options }}
       storage_account_name: ${{ inputs.storage_account_name }}
       storage_container_name: ${{ inputs.storage_container_name }}
-      backup_file_name: '${{ inputs.database_server_name }}_${{ inputs.database_name}}_${{ inputs.backup_tag }}_$(date +%Y-%m-%d_%H:%M:%S).sql'
+      backup_file_name: ${{ needs.create_metadata.outputs.backup_filename }}
     secrets:
       database_password: ${{ needs.get_database_password.outputs.result }}
       azure_login_creds: ${{ secrets.az_creds }}
