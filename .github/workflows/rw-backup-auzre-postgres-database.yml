@@ -70,7 +70,7 @@ jobs:
   create_metadata:
     runs-on: ubuntu-latest
     outputs:
-      backup_filename: ${{ steps.metadata.backup_filename }}
+      backup_filename: ${{ steps.metadata.outputs.backup_filename }}
     steps:
       - name: Create
         id: metadata
