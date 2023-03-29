@@ -3,8 +3,10 @@ name: RW — Backup a given database within an Azure Postgres server
 on:
   workflow_call:
     inputs:
-      firewall_name:
+      firewall_rule_name:
         type: string
+        required: false
+        default: git
         
       github_env:
         type: string
@@ -88,7 +90,7 @@ jobs:
       database_resource_group: ${{ inputs.database_resource_group }}
       database_server_name: ${{ inputs.database_server_name }}
       is_single_server: ${{ inputs.is_single_server }}
-      firewall_rule_name: github-runner-br-${{ inputs.firewall_name }}
+      firewall_rule_name: github-runner-br-${{ inputs.firewall_rule_name }}
     secrets:
       azure_login_creds: ${{ secrets.az_creds }}
 
@@ -126,6 +128,6 @@ jobs:
       database_resource_group: ${{ inputs.database_resource_group }}
       database_server_name: ${{ inputs.database_server_name }}
       is_single_server: ${{ inputs.is_single_server }}
-      firewall_rule_name: github-runner-br-${{ inputs.firewall_name }}
+      firewall_rule_name: github-runner-br-${{ inputs.firewall_rule_name }}
     secrets:
       azure_login_creds: ${{ secrets.az_creds }}
