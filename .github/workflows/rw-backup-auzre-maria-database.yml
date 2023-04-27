@@ -91,6 +91,9 @@ jobs:
     needs: [create_metadata, add_db_firewall_rule, get_database_password]
     uses: ./.github/workflows/rw-backup-maria-database.yml
     with:
+      database_host: '${{ inputs.database_server_name }}.mariadb.database.azure.com'
+      database_name: ${{ inputs.database_name }}
+      database_user: ${{ inputs.database_user }}
       storage_account_name: ${{ inputs.storage_account_name }}
       storage_container_name: ${{ inputs.storage_container_name }}
       backup_file_name: ${{ needs.create_metadata.outputs.backup_filename }}
