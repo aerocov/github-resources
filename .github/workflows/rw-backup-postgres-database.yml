@@ -62,7 +62,7 @@ jobs:
           -U ${{ inputs.database_user }} \
           -Fc -v --no-owner --no-privileges \
           ${{ inputs.options }} \
-          -f ${{ inputs.backup_file_name }} \
+          -f postgres_backup.sql \
           ${{ inputs.database_name }}
 
       - name: Azure login
