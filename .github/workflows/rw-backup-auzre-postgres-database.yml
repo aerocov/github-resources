@@ -6,7 +6,6 @@ on:
       firewall_rule_name:
         type: string
         required: false
-        default: git
         
       github_env:
         type: string
@@ -80,7 +79,7 @@ jobs:
       - name: Create
         id: metadata
         run: |
-          echo "backup_filename=${{ inputs.database_server_name }}_${{ inputs.database_name}}_${{ inputs.backup_tag }}_$(date +%Y-%m-%d_%H:%M:%S).sql" >> $GITHUB_OUTPUT
+          echo "backup_filename=${{ inputs.database_server_name }}/${{ inputs.database_name}}/${{ inputs.database_server_name }}_${{ inputs.database_name}}_$(date +%Y-%m-%d_%H:%M:%S).sql" >> $GITHUB_OUTPUT
 
   add_db_firewall_rule:
     uses: ./.github/workflows/rw-change-azure-postgres-firewall.yml

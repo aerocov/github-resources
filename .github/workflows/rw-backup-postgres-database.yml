@@ -78,4 +78,5 @@ jobs:
             az storage blob upload \
             --account-name ${{ inputs.storage_account_name }} \
             --container-name ${{ inputs.storage_container_name }} \
-            --file ${{ inputs.backup_file_name }}
+            --file postgres_backup.sql \
+            --name ${{ inputs.backup_file_name }}
