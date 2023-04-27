@@ -1,0 +1,75 @@
+name: RW — Change Azure MariaDatabase' firewall rule
+
+on:
+  workflow_call:
+    inputs:
+      github_env:
+        type: string
+
+      add_or_remove:
+        type: string
+        required: true
+
+      database_resource_group:
+        type: string
+        required: true
+
+      database_server_name:
+        type: string
+        required: true
+
+      firewall_rule_name:
+        type: string
+        required: false
+        default: github-runner
+
+    secrets:
+      azure_login_creds:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  change_firewall_rule:
+    name: 'Change firewall rule'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.github_env  }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get runner IP
+        id: get-runner-ip
+        run: |
+          echo "runner_ip=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
+
+      - name: Echo Runner IP
+        run: |
+          echo "Runner IP: ${{ steps.get-runner-ip.outputs.runner_ip }}"
+
+      - name: Azure login
+        uses: Azure/login@v1
+        with:
+          creds: '${{ secrets.azure_login_creds }}'
+
+      - name: Remove any previously created firewall rule (MariaDB)
+        continue-on-error: true
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az mariadb server firewall-rule delete --resource-group ${{ inputs.database_resource_group }} --server-name ${{ inputs.database_server_name }} --name ${{ inputs.firewall_rule_name }} --yes
+
+      - name: Add firewall rule (MariaDB)
+        
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az mariadb server firewall-rule create --resource-group ${{ inputs.database_resource_group }} --server-name ${{ inputs.database_server_name }} --name ${{ inputs.firewall_rule_name }} --start-ip-address ${{ steps.get-runner-ip.outputs.runner_ip }} --end-ip-address ${{ steps.get-runner-ip.outputs.runner_ip }}
+            
+      
