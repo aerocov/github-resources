@@ -1,0 +1,91 @@
+name: Build and push docker images, using Azure keyvault
+
+on:
+  workflow_call:
+    inputs:
+      github_env:
+        type: string
+        
+      envFile:
+        type: string  
+
+      docker_image_name:
+        type: string
+        required: true
+
+      dockerfile:
+        type: string
+        required: true
+        default: Dockerfile
+
+      dockerfile_context:
+        type: string
+        required: true
+        default: '.'
+
+      tag:
+        type: string
+        required: true
+
+      keyvault:
+        type: string
+        required: true
+
+      container_registry_server:
+        type: string
+        required: true
+
+    secrets:
+      azure_login_creds:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.github_env  }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: Azure/login@v1
+        with:
+          creds: '${{ secrets.azure_login_creds }}'
+
+      - name: Retrieve ACR login secrets
+        uses: Azure/get-keyvault-secrets@v1
+        with:
+          keyvault: ${{ inputs.keyvault }}
+          secrets: 'acr-username, acr-password'
+        id: keyvault
+
+      - name: Log in to the Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ inputs.container_registry_server }}
+          username: ${{ steps.keyvault.outputs.acr-username }}
+          password: ${{ steps.keyvault.outputs.acr-password }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: '${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}'
+          tags: |
+            ${{ inputs.tag }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: ${{ inputs.dockerfile_context }}
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
