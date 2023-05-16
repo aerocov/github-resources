@@ -6,7 +6,7 @@ on:
       github_env:
         type: string
         
-      envFile:
+      ENV_FILE:
         type: string  
 
       docker_image_name:
