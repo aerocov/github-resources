@@ -91,42 +91,41 @@ jobs:
       #     tags: ${{ steps.meta.outputs.tags }}
       #     labels: ${{ steps.meta.outputs.labels }}
       #     build-args: ${{inputs.build_args}}
-
   runs:
-  using: composite
-  steps:
-    - name: Docker build
-      shell: bash
-      run: |
-        docker build -t ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }} --build-arg NUGET_PAT=${{ inputs.tag }} .
+    using: composite
+    steps:
+      - name: Docker build
+        shell: bash
+        run: |
+          docker build -t ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }} --build-arg NUGET_PAT=${{ inputs.tag }} .
 
-    - name: Set up Clair
-      shell: bash
-      run: |
-        curl -L \
-          https://github.com/arminc/clair-scanner/releases/download/v12/clair-scanner_linux_amd64 \
-          -o clair-scanner && \
-          chmod +x ./clair-scanner
-        docker run -d --name clair-db arminc/clair-db:latest
-        docker run -p 6060:6060 --link clair-db:postgres -d --name clair arminc/clair-local-scan:latest
+      - name: Set up Clair
+        shell: bash
+        run: |
+          curl -L \
+            https://github.com/arminc/clair-scanner/releases/download/v12/clair-scanner_linux_amd64 \
+            -o clair-scanner && \
+            chmod +x ./clair-scanner
+          docker run -d --name clair-db arminc/clair-db:latest
+          docker run -p 6060:6060 --link clair-db:postgres -d --name clair arminc/clair-local-scan:latest
 
-    - name: Scan image with Clair
-      shell: bash
-      run: |
-        ip=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-        ./clair-scanner --ip $ip ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }}
+      - name: Scan image with Clair
+        shell: bash
+        run: |
+          ip=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+          ./clair-scanner --ip $ip ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }}
 
-    - name: ACR Push
-      shell: bash
-      run: |
-        if [[ "${{ inputs.should-push-to-acr }}" == true ]]; then
-          - name: Log in to the Azure Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ inputs.container_registry_server }}
-          username: ${{ steps.keyvault.outputs.acr-username }}
-          password: ${{ steps.keyvault.outputs.acr-password }}
-        docker push ${{ inputs.image-name }}:${{ inputs.tag }}
-        fi
-        exit 0
+      - name: ACR Push
+        shell: bash
+        run: |
+          if [[ "${{ inputs.should-push-to-acr }}" == true ]]; then
+            - name: Log in to the Azure Container Registry
+          uses: docker/login-action@v2
+          with:
+            registry: ${{ inputs.container_registry_server }}
+            username: ${{ steps.keyvault.outputs.acr-username }}
+            password: ${{ steps.keyvault.outputs.acr-password }}
+          docker push ${{ inputs.image-name }}:${{ inputs.tag }}
+          fi
+          exit 0  
 
