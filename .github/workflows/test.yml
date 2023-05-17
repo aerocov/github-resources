@@ -82,6 +82,7 @@ jobs:
             ${{ inputs.tag }}
             type=raw,value=latest,enable={{is_default_branch}}
 
+      
       # - name: Build and push Docker image
       #   uses: docker/build-push-action@v3
       #   with:
@@ -91,9 +92,8 @@ jobs:
       #     tags: ${{ steps.meta.outputs.tags }}
       #     labels: ${{ steps.meta.outputs.labels }}
       #     build-args: ${{inputs.build_args}}
-  runs:
-    using: composite
-    steps:
+
+    build:
       - name: Docker build
         shell: bash
         run: |
@@ -127,5 +127,4 @@ jobs:
             password: ${{ steps.keyvault.outputs.acr-password }}
           docker push ${{ inputs.image-name }}:${{ inputs.tag }}
           fi
-          exit 0  
-
+          exit 0
