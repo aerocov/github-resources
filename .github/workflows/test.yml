@@ -82,12 +82,19 @@ jobs:
             ${{ inputs.tag }}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: ${{ inputs.dockerfile_context }}
-          file: ${{ inputs.dockerfile }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: ${{inputs.build_args}}
+      #- name: Build and push Docker image
+      #  uses: docker/build-push-action@v3
+      #  with:
+      #    context: ${{ inputs.dockerfile_context }}
+      #    file: ${{ inputs.dockerfile }}
+      #    push: true
+      #    tags: ${{ steps.meta.outputs.tags }}
+      #    labels: ${{ steps.meta.outputs.labels }}
+      #    build-args: ${{inputs.build_args}}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with: 
+         version: ${{ steps.meta.outputs.tags }}
+          driver-opts:
+            image='${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}'    
+            build-args: ${{inputs.build_args}}  
