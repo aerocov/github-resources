@@ -93,7 +93,6 @@ jobs:
       #     labels: ${{ steps.meta.outputs.labels }}
       #     build-args: ${{inputs.build_args}}
 
-    build:
       - name: Docker build
         shell: bash
         run: |
