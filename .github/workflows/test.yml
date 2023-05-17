@@ -100,7 +100,7 @@ jobs:
       - name: Docker build
         shell: bash
         run: |
-          docker build -t ${{ inputs.docker_image_name }}:${{ inputs.tag }} --build-arg ENV_FILE=${{inputs.${ENV_FILE}}} .
+          docker build -t ${{ inputs.docker_image_name }}:${{ inputs.tag }} --build-arg ENV_FILE=${{inputs.ENV_FILE}} .
 
       - name: Set up Clair
         shell: bash
