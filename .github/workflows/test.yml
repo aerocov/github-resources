@@ -96,7 +96,7 @@ jobs:
       - name: Docker build
         shell: bash
         run: |
-          docker build -t ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }} --build-arg NUGET_PAT=${{ inputs.tag }} .
+          docker build -t ${{ inputs.docker_image_name }}:${{ inputs.tag }} --build-arg NUGET_PAT=${{ inputs.tag }} .
 
       - name: Set up Clair
         shell: bash
