@@ -115,8 +115,8 @@ jobs:
       - name: Scan image with Clair
         shell: bash
         run: |
-          ip=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-          ./clair-scanner --ip $ip ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }}
+          #ip=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+          clair-scanner ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }}
 
       - name: ACR Push
         shell: bash
