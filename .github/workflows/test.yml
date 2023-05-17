@@ -26,7 +26,7 @@ on:
         
       ENV_FILE:
         type: string
-        required: true
+        required: false
 
       tag:
         type: string
