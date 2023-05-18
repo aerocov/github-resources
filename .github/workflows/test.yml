@@ -115,7 +115,7 @@ jobs:
       - name: Scan image with Clair
         shell: bash
         run: |
-          clair-scanner ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }}
+          clairctl vulnerability scan ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }}
 
       - name: ACR Push
         shell: bash
