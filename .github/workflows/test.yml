@@ -111,7 +111,7 @@ jobs:
           echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install trivy
-          trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL ${{ inputs.image-name }}:${{ inputs.tag }}  
+          trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }}  
       
       - name: ACR Push
         shell: bash
