@@ -63,7 +63,6 @@ env:
   AUTO_TFVARS_ARTIFACT: ${{ inputs.auto_tfvars_artifact }}
   TF_PARALLELISM_COUNT: ${{ inputs.tf_parallelism_count }}
   WORKING_DIR: ${{ inputs.working_dir }}
-  IMAGE_TAG: ${{ github.run_id }}
 
 permissions:
   id-token: write
@@ -113,7 +112,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -var-file=$TFVARS_FILE -var="image_tag=${{ github.run_id }}" -input=false
+        run: terraform plan -var-file=$TFVARS_FILE -var="image_tag=${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ github.run_id }}" -input=false
 
   terraform-apply:
     name: 'Terraform Apply'

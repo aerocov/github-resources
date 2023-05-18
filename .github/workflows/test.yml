@@ -93,7 +93,7 @@ jobs:
           context: ${{ inputs.dockerfile_context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: ${{ github.run_id }}
+          tags: ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ github.run_id }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: ${{inputs.build_args}}  
 
