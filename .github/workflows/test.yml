@@ -112,7 +112,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install trivy
           trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL ${{ inputs.docker_image_name }}:${{ inputs.tag }}  
-          displayName: 'Docker Scan'
           continueOnError: true
       
       - name: ACR Push
