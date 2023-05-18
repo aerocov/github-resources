@@ -83,7 +83,7 @@ jobs:
         with:
           images: '${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}'
           tags: |
-            ${{ steps.meta.outputs.tags }}
+            ${{ inputs.steps.meta.outputs.tags }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       
@@ -93,7 +93,7 @@ jobs:
           context: ${{ inputs.dockerfile_context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ inputes.steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: ${{inputs.build_args}}
 
