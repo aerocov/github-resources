@@ -1,0 +1,156 @@
+name: Terraform Deploy
+
+on:
+  workflow_call:
+    inputs:
+      github_env:
+        type: string
+
+      working_dir:
+        type: string
+        required: true
+
+      tfvars_file:
+        type: string
+        required: true
+
+      auto_tfvars_artifact:
+        type: string
+        required: false
+
+      tf_backend_resource_group_name:
+        type: string
+        required: true
+
+      tf_backend_storage_account_name:
+        type: string
+        required: true
+
+      tf_backend_storage_container_name:
+        type: string
+        required: true
+
+      tf_backend_state_key:
+        type: string
+        required: true
+
+      tf_parallelism_count:
+        type: string
+        default: '10'
+
+      run_expression:
+        type: string
+        required: false
+
+      auto_tfvars:
+        type: string
+        required: false
+
+    secrets:
+      azure_login_creds:
+        required: true
+
+env:
+  ARM_CLIENT_ID: ${{ fromJson(secrets.azure_login_creds).clientId }}
+  ARM_CLIENT_SECRET: ${{ fromJson(secrets.azure_login_creds).clientSecret }}
+  ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.azure_login_creds).subscriptionId }}
+  ARM_TENANT_ID: ${{ fromJson(secrets.azure_login_creds).tenantId }}
+  TF_BACKEND_RESOURCE_GROUP_NAME: ${{ inputs.tf_backend_resource_group_name }}
+  TF_BACKEND_STORAGE_ACCOUNT_NAME: ${{ inputs.tf_backend_storage_account_name }}
+  TF_BACKEND_STORAGE_CONTAINER_NAME: ${{ inputs.tf_backend_storage_container_name }}
+  TF_BACKEND_STATE_KEY: ${{ inputs.tf_backend_state_key }}
+  TFVARS_FILE: ${{ inputs.tfvars_file }}
+  AUTO_TFVARS_ARTIFACT: ${{ inputs.auto_tfvars_artifact }}
+  TF_PARALLELISM_COUNT: ${{ inputs.tf_parallelism_count }}
+  WORKING_DIR: ${{ inputs.working_dir }}
+  IMAGE_TAG: ${{ github.run_id }}
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download auto tfvars
+        if: ${{ env.AUTO_TFVARS_ARTIFACT }}
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.AUTO_TFVARS_ARTIFACT }}
+          path: ${{ env.WORKING_DIR }}
+
+      - name: Create auto tfvars
+        if: ${{ inputs.auto_tfvars }}
+        run: | 
+          echo '${{ inputs.auto_tfvars }}' > 'injected.auto.tfvars'
+          echo $(cat injected.auto.tfvars)
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+              -backend-config="resource_group_name=$TF_BACKEND_RESOURCE_GROUP_NAME" \
+              -backend-config="storage_account_name=$TF_BACKEND_STORAGE_ACCOUNT_NAME" \
+              -backend-config="container_name=$TF_BACKEND_STORAGE_CONTAINER_NAME" \
+              -backend-config="key=$TF_BACKEND_STATE_KEY"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=$TFVARS_FILE -var="image_tag=${{ github.run_id }}" -input=false
+
+  terraform-apply:
+    name: 'Terraform Apply'
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    environment:
+      name: ${{ inputs.github_env }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download auto tfvars
+        if: ${{ env.AUTO_TFVARS_ARTIFACT }}
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.AUTO_TFVARS_ARTIFACT }}
+          path: ${{ env.WORKING_DIR }}
+
+      - name: Create auto tfvars
+        if: ${{ inputs.auto_tfvars }}
+        run: echo '${{ inputs.auto_tfvars }}' > 'injected.auto.tfvars'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+              -backend-config="resource_group_name=$TF_BACKEND_RESOURCE_GROUP_NAME" \
+              -backend-config="storage_account_name=$TF_BACKEND_STORAGE_ACCOUNT_NAME" \
+              -backend-config="container_name=$TF_BACKEND_STORAGE_CONTAINER_NAME" \
+              -backend-config="key=$TF_BACKEND_STATE_KEY"
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file=$TFVARS_FILE -var="image_tag=${{ github.run_id }}"-parallelism=$TF_PARALLELISM_COUNT -input=false

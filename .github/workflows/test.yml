@@ -93,9 +93,9 @@ jobs:
           context: ${{ inputs.dockerfile_context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ github.run_id }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: ${{inputs.build_args}}
+          build-args: ${{inputs.build_args}}  
 
       # - name: Docker build
       #   shell: bash
