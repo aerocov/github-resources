@@ -128,8 +128,3 @@ jobs:
       #     fi
       #     exit 0
 
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: upload-artifacts
-          path: upload/artifacts
