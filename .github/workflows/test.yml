@@ -102,21 +102,17 @@ jobs:
         run: |
           docker build -t ${{ inputs.docker_image_name }}:${{ inputs.tag }} --build-arg=${{inputs.build_args}} .
 
-      - name: Set up Clair
+      - name: Set-up & Scan with Trivy
         shell: bash
         run: |
-          curl -L \
-            https://github.com/arminc/clair-scanner/releases/download/v12/clair-scanner_linux_amd64 \
-            -o clair-scanner && \
-            chmod +x ./clair-scanner
-          docker run -d --name clair-db arminc/clair-db:latest
-          docker run -p 6060:6060 --link clair-db:postgres -d --name clair arminc/clair-local-scan:latest
-
-      - name: Scan image with Clair
-        shell: bash
-        run: |
-          clairctl vulnerability scan ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ inputs.tag }}
-
+          set -euo pipefail
+          sudo apt-get install wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
+          trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL ${{ inputs.image-name }}:${{ inputs.tag }}  
+      
       - name: ACR Push
         shell: bash
         run: |
