@@ -97,7 +97,7 @@ jobs:
 
          if [ ${{ inputs.use_tag }} ]; then
 
-         echo "::set-output name=tags::${{inputs.image_tag}}"
+         echo "::set-output name=tags::${{inputs.tag}}"
 
          else        
 
