@@ -100,6 +100,12 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: Extract Docker Image metadata
+        id: extract-metadata
+        run: |
+          IMAGE_TAG=$(docker inspect --format='{{.Config.Labels.version}}' ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }})
+          echo "::set-output name=image-tag::$IMAGE_TAG"
+
       - name: Terraform Init
         run: |
           terraform init \
@@ -112,7 +118,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -var-file=$TFVARS_FILE -var="image_tag=${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{steps.meta.outputs.tags}}" -input=false
+        run: terraform plan -var-file=$TFVARS_FILE -var="image_tag=$IMAGE_TAG" -input=false
 
   terraform-apply:
     name: 'Terraform Apply'
@@ -152,4 +158,4 @@ jobs:
               -backend-config="key=$TF_BACKEND_STATE_KEY"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file=$TFVARS_FILE -var="image_tag=${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{steps.meta.outputs.tags}}" -parallelism=$TF_PARALLELISM_COUNT -input=false
+        run: terraform apply -auto-approve -var-file=$TFVARS_FILE -var="image_tag=$IMAGE_TAG" -parallelism=$TF_PARALLELISM_COUNT -input=false
