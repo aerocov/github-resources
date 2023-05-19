@@ -112,7 +112,7 @@ jobs:
           context: ${{ inputs.dockerfile_context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: ${{steps.meta.outputs.tags}}
+          tags: ${{steps.outputs.tags}}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: ${{inputs.build_args}}  
 
