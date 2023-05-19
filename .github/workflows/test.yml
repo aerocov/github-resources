@@ -27,7 +27,7 @@ on:
       use_tag:
         type: boolean
         required: false
-        default: true
+        default: false
 
       tag:
         type: string
@@ -97,7 +97,7 @@ jobs:
 
          if [ ${{ inputs.use_tag }} ]; then
 
-         echo "::set-output name=tags::${{inputs.tag}}"
+         echo "::set-output name=tags::${{inputs.image_tag}}"
 
          else        
 
