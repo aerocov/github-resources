@@ -103,7 +103,7 @@ jobs:
       - name: Extract Docker Image metadata
         id: extract-metadata
         run: |
-          IMAGE_TAG=$(docker inspect --format='{{.Config.Labels.imagetag}}' ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }})
+          IMAGE_TAG=$(docker inspect --format="{{ index .Config.Labels \"imagetag\"}}" ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }})
           echo "::set-output name=image-tag::$IMAGE_TAG"
 
       - name: Terraform Init
