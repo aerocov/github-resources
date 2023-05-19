@@ -87,32 +87,13 @@ jobs:
             ${{ inputs.tag }}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - uses: actions/checkout@v2
-
-      - name: tags
-
-        id: set-variable
-
-        run: |
-
-         if [ ${{ inputs.use_tag }} ]; then
-
-         echo "::set-output name=tags::${{inputs.tag}}"
-
-         else        
-
-         echo "::set-output name=tags::${{ steps.meta.outputs.tags }}"
-
-         fi
-
-        shell: bash
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
           context: ${{ inputs.dockerfile_context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: ${{steps.meta.outputs.tags}}
+          tags: ${{ inputs.container_registry_server }}/${{ inputs.docker_image_name }}:${{ github.run_id }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: ${{inputs.build_args}}  
 
