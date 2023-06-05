@@ -1,0 +1,61 @@
+name: RW — Change Azure virtualMachine' firewall rule
+
+on:
+  workflow_call:
+    inputs:
+
+      virtual_machine_resource_group:
+        type: string
+        required: true
+
+      nsg_name:
+        type: string
+        required: true
+
+    secrets:
+      azure_login_creds:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  change_firewall_rule:
+    name: 'Change firewall rule'
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Get runner IP
+        id: get-runner-ip
+        run: |
+          echo "runner_ip=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
+
+      - name: Echo Runner IP
+        run: |
+          echo "Runner IP: ${{ steps.get-runner-ip.outputs.runner_ip }}"
+
+      - name: Azure login
+        uses: Azure/login@v1
+        with:
+          creds: '${{ secrets.azure_login_creds }}'
+
+      - name: Remove any previously created firewall rule (AzureNSG)
+        continue-on-error: true
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az network nsg rule delete --resource-group ${{ inputs.virtual_machine_resource_group }} --nsg-name ${{ inputs.nsg_name }} --name GHA_SSH --priority 100 --destination-port-range 22 --access Allow    
+
+      - name: Add firewall rule (AzureNSG)
+        
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az network nsg rule create --resource-group ${{ inputs.virtual_machine_resource_group }} --nsg-name ${{ inputs.nsg_name }} --name GHA_SSH --protocol Tcp --direction Inbound --priority 100 --start-ip-address ${{ steps.get-runner-ip.outputs.runner_ip }} --end-ip-address ${{ steps.get-runner-ip.outputs.runner_ip }} --destination-port-range 22 --access Allow   
+
+      
+      
