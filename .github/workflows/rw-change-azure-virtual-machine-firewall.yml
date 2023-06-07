@@ -1,4 +1,4 @@
-name: RW — Change Azure virtualMachine' firewall rule
+name: RW — Change Azure virtualMachine firewall rule
 
 on:
   workflow_call:
@@ -41,6 +41,9 @@ jobs:
       name: ${{ inputs.github_env  }}
 
     steps:
+    
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Get runner IP
         id: get-runner-ip
