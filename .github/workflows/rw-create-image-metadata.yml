@@ -1,0 +1,89 @@
+name: RW — Create image metadata for container deployment
+
+on:
+  workflow_call:
+    inputs:
+      image_name:
+        type: string
+        required: true
+        
+      deploy_placeholder:
+        type: string
+        default: 'false'
+
+      container_registry_server:
+        type: string
+        required: true
+
+    outputs:
+      image_tag:
+        description: 'The image tag to be used with docker image (the same as app_version)'
+        value: ${{ jobs.create_metadata.outputs.image_tag }}
+
+      app_version:
+        description: 'The app version to be used for the deployment'
+        value: ${{ jobs.create_metadata.outputs.app_version }}
+
+      auto_tfvars:
+        description: 'All outputs and inputs in a format that can be used to create a terraform *.auto.tfvars file'
+        value: ${{ jobs.create_metadata.outputs.auto_tfvars }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  create_metadata:
+    runs-on: ubuntu-latest
+    outputs:
+      image_name: ${{ inputs.image_name }}
+      image_tag: ${{ fromJson(steps.metadata.outputs.result).appVersion }}
+      app_version: ${{ fromJson(steps.metadata.outputs.result).appVersion }}
+      tfvars_expression: ${{ steps.create_tfvars.outputs.tfvars_expression }}
+      auto_tfvars: ${{ steps.create_auto_tfvars.outputs.auto_tfvars }}
+
+    steps:
+      - name: Create metadata
+        id: metadata
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const { GITHUB_SHA, GITHUB_RUN_ID, GITHUB_RUN_NUMBER } = process.env
+            const shortSha = GITHUB_SHA.substring(0, 7)
+            const runId = GITHUB_RUN_ID
+            const runNumber = GITHUB_RUN_NUMBER
+            const appVersion = `${shortSha}n${runNumber}`.toLowerCase()
+
+            return {
+              shortSha,
+              runId,
+              runNumber,
+              appVersion,
+            }
+
+      - name: Create auto tfvars
+        id: create_auto_tfvars
+        run: |
+          container_registry_server=${{ inputs.container_registry_server }}
+          deploy_placeholder=${{ inputs.deploy_placeholder }}
+          image_name=${{ inputs.image_name }}
+          image_tag=${{ fromJson(steps.metadata.outputs.result).appVersion }}
+          app_version=${{ fromJson(steps.metadata.outputs.result).appVersion }}
+
+          echo "auto_tfvars<<EOF" >>$GITHUB_OUTPUT
+          [ ! -z $container_registry_server ] && echo "container_registry_server = \"$container_registry_server\"" >>$GITHUB_OUTPUT
+          [ ! -z $deploy_placeholder ] && echo "deploy_placeholder = $deploy_placeholder" >>$GITHUB_OUTPUT
+          [ ! -z $image_name ] && echo "image_name = \"$image_name\"" >>$GITHUB_OUTPUT
+          [ ! -z $image_tag ] && echo "image_tag = \"$image_tag\"" >>$GITHUB_OUTPUT
+          [ ! -z $app_version ] && echo "app_version = \"$app_version\"" >>$GITHUB_OUTPUT
+          echo "EOF" >>$GITHUB_OUTPUT
+
+      - name: Display results
+        run: |
+          echo "metadata: ${{ steps.metadata.outputs.result }}"
+          echo "auto_tfvars: ${{ steps.create_auto_tfvars.outputs.auto_tfvars }}"
+
+      
+    
+
+      
