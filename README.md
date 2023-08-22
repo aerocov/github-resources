@@ -1,1 +1,2 @@
-This repository holds all the reusable github resources used in DBC.
+- Reusable github workflows
+- Self hosted github runners
